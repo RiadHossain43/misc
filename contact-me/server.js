@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const compression = require("compression");
+const Joi = require("joi");
 
 app.use(express.json({ limit: "200mb" }));
 app.use(cookieParser());
@@ -23,8 +24,22 @@ app.use((req, res, next) => {
 });
 app.use(compression());
 
+const inputValidation = Joi.object({
+  name: Joi.string().required().min(2).label("name"),
+  email: Joi.string().email().required().label("email"),
+  phone: Joi.string().alphanum().required().label("phone"),
+  company: Joi.string().optional().allow("", null).label("company"),
+  message: Joi.string().optional().allow("", null).label("message"),
+});
+
 // Define Routes...
 app.post("/contact-me", async (req, res, next) => {
+  let { error } = inputValidation.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res
+      .status(400)
+      .json({ message: "Validation error: " + error.details[0].message });
+  }
   const { name, email, phone, company, message } = req.body;
   let transporter = nodemailer.createTransport({
     service: "gmail",
@@ -49,7 +64,7 @@ app.post("/contact-me", async (req, res, next) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("email send successfully.")
+    console.log("email send successfully.");
     res.status(200).json({
       message: "I have recieved your email. I'll get in touch shortly.",
     });
