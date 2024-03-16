@@ -31,7 +31,7 @@ const inputValidation = Joi.object({
   company: Joi.string().optional().allow("", null).label("company"),
   message: Joi.string().optional().allow("", null).label("message"),
 });
-
+app.get("*", (_, res) => res.status(200).json({ message: "Active" }));
 // Define Routes...
 app.post("/contact-me", async (req, res, next) => {
   let { error } = inputValidation.validate(req.body, { abortEarly: false });
